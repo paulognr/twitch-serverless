@@ -1,4 +1,10 @@
 version: 0.2
+
+env:
+  secrets-manager:
+    TWITCH_CLIENT_ID: arn:aws:secretsmanager:ca-central-1:041278094610:secret:TWITCH_CLIENT_ID-OLCSc5
+    TWITCH_CLIENT_SECRET: arn:aws:secretsmanager:ca-central-1:041278094610:secret:TWITCH_CLIENT_SECRET-cejUax
+
 phases:
   install:
     runtime-versions:
@@ -14,6 +20,8 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Compiling the Node.js code
+      - set TWITCH_CLIENT_ID=$TWITCH_CLIENT_ID
+      - set TWITCH_CLIENT_SECRET=$TWITCH_CLIENT_SECRET
       - sls package
       #- npm run test
   post_build:

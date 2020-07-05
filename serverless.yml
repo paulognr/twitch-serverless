@@ -5,8 +5,10 @@ provider:
   region: ca-central-1
   stage: dev
   environment:
-    TWITCH_CLIENT_ID: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_ID~true}
-    TWITCH_CLIENT_SECRET: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_SECRET~true}
+    #TWITCH_CLIENT_ID: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_ID~true}
+    #TWITCH_CLIENT_SECRET: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_SECRET~true}
+    TWITCH_CLIENT_ID: ${env:TWITCH_CLIENT_ID}
+    TWITCH_CLIENT_SECRET: ${env:TWITCH_CLIENT_SECRET}
     STREAMS_VIEWERS_TABLE: ${self:custom.twitchDashboard.service}-${self:provider.stage}-viewers
     WEBSOCKET_CONNECTIONS_TABLE: ${self:custom.twitchDashboard.service}-${self:provider.stage}-connections
     SESSION_TTL: ${self:custom.sessionTTL}
