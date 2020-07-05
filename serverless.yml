@@ -2,7 +2,6 @@ service: twitch-dashboard
 
 provider:
   name: aws
-  profile: twitch
   region: ca-central-1
   stage: dev
   environment:
