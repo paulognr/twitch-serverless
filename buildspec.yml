@@ -1,0 +1,21 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - echo Installing Serverless...
+      - npm install -g serverless
+  pre_build:
+    commands:
+      - echo Installing source NPM dependencies...
+      - npm install
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Compiling the Node.js code
+      - sls package
+      #- npm run test
+  post_build:
+    commands:
+      - echo Build completed on `date`
