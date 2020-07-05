@@ -2,6 +2,7 @@ const path = require('path');
 const slsw = require('serverless-webpack');
 const isLocal = slsw.lib.webpack.isLocal;
 const nodeExternals = require('webpack-node-externals');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = {
     mode: isLocal ? 'development' : 'production',
@@ -17,15 +18,17 @@ module.exports = {
         path: path.resolve(__dirname, '.webpack'),
         filename: '[name].js',
     },
+    plugins: [new ForkTsCheckerWebpackPlugin()],
     stats: 'detailed',
     module: {
         rules: [
             {
                 test: /\.ts(x?)$/,
-                loaders: [
-                    'ts-loader'
-                ],
+                loader: 'ts-loader',
                 exclude: /node_modules/,
+                options: {
+                    transpileOnly: true
+                }
             }
         ]
     }

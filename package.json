@@ -17,6 +17,7 @@
     "@types/jest": "^26.0.0",
     "@types/node": "^14.0.13",
     "@types/node-fetch": "^2.5.7",
+    "fork-ts-checker-webpack-plugin": "^5.0.6",
     "jasmine-reporters": "^2.3.2",
     "jest": "^26.0.1",
     "serverless": "^1.73.0",
