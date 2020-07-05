@@ -1,0 +1,157 @@
+service: twitch-dashboard
+
+provider:
+  name: aws
+  profile: twitch
+  region: ca-central-1
+  stage: dev
+  environment:
+    TWITCH_CLIENT_ID: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_ID~true}
+    TWITCH_CLIENT_SECRET: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_SECRET~true}
+    STREAMS_VIEWERS_TABLE: ${self:custom.twitchDashboard.service}-${self:provider.stage}-viewers
+    WEBSOCKET_CONNECTIONS_TABLE: ${self:custom.twitchDashboard.service}-${self:provider.stage}-connections
+    SESSION_TTL: ${self:custom.sessionTTL}
+  runtime: nodejs12.x
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "execute-api:ManageConnections"
+      Resource:
+        - "arn:aws:execute-api:*:*:**/@connections/*"
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:Scan
+        - dynamodb:BatchWriteItem
+        - dynamodb:GetRecords,
+        - dynamodb:GetShardIterator,
+        - dynamodb:DescribeStream,
+        - dynamodb:ListStreams,
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: "*"
+  websocketApiName: websocket-twitch
+  websocketApiRouteSelectionExpression: $request.body.action
+
+plugins:
+  - serverless-webpack
+  - serverless-dynamodb-local
+  - serverless-plugin-offline-dynamodb-stream
+  - serverless-offline
+
+package:
+  individually: true
+
+functions:
+  pull-streams:
+    handler: src/handlers/pullStreams.handler
+    memorySize: 128MB
+    timeout: 60
+    events:
+      - schedule:
+          rate: rate(1 minute)
+
+  search-viewers:
+    handler: src/handlers/searchViewers.handler
+    memorySize: 128MB
+    timeout: 30
+    events:
+      - http:
+          path: viewers/search
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                - gamesId: true
+                - relativeTime: true
+
+  on-connect:
+    handler: src/handlers/connectionManagement.onConnect
+    events:
+      - websocket:
+          route: $connect
+
+  on-disconnect:
+    handler: src/handlers/connectionManagement.onDisconnect
+    events:
+      - websocket:
+          route: $disconnect
+
+  broadcast:
+    handler: src/handlers/broadcast.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [StreamsViewersDynamoDbTable, StreamArn]
+
+resources:
+  Resources:
+    StreamsViewersDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.STREAMS_VIEWERS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: game_id
+            AttributeType: N
+          - AttributeName: created_at
+            AttributeType: N
+        KeySchema:
+          - AttributeName: game_id
+            KeyType: HASH
+          - AttributeName: created_at
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 2
+          WriteCapacityUnits: 1
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: ttl
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.WEBSOCKET_CONNECTIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+          - AttributeName: joinedAt
+            AttributeType: N
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+          - AttributeName: joinedAt
+            KeyType: RANGE
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: terminateAt
+
+custom:
+  twitchDashboard: ${self:}
+  webpack:
+    includeModules: true
+    excludeFiles:
+      - src/**/*.js.map
+      - test/**/*.js
+  sessionTTL: 600
+  dynamodb:
+    start:
+      inMemory: false
+      migrate: true
+    stages:
+      - ${self:provider.stage}
+  dynamodbStream:
+    host: localhost
+    port: 8000
+    region: localhost
+    pollForever: true
+    streams:
+      - table: ${self:provider.environment.STREAMS_VIEWERS_TABLE}
+        functions:
+          - broadcast
