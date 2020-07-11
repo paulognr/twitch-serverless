@@ -14,7 +14,7 @@ export class ViewersRepository {
 
     public async saveAll(items:Array<ViewerEntity>): Promise<Array<ViewerEntity>> {
         const createdAt = new Date().getTime();
-        const ttl = moment().add(1, 'd').toDate().getTime();
+        const ttl = moment().add(1, 'd').toDate().getTime() / 1000 | 0;
         items.forEach((viewer) =>  {
             viewer.created_at = createdAt;
             viewer.ttl = ttl;
