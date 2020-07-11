@@ -2,8 +2,8 @@ service: twitch-dashboard
 
 provider:
   name: aws
-  region: ca-central-1
-  stage: dev
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
   environment:
     #TWITCH_CLIENT_ID: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_ID~true}
     #TWITCH_CLIENT_SECRET: ${ssm:/aws/reference/secretsmanager/TWITCH_CLIENT_SECRET~true}
@@ -135,6 +135,8 @@ resources:
 
 custom:
   twitchDashboard: ${self:}
+  stage: ${env:STAGE, 'dev'}
+  region: ${env:REGION, 'ca-central-1'}
   webpack:
     includeModules: true
     excludeFiles:
