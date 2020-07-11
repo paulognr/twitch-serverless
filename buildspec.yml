@@ -22,7 +22,7 @@ phases:
       - echo Compiling the Node.js code
       - set TWITCH_CLIENT_ID=$TWITCH_CLIENT_ID
       - set TWITCH_CLIENT_SECRET=$TWITCH_CLIENT_SECRET
-      - sls package
+      - sls package --stage $STAGE --region $REGION
       #- npm run test
   post_build:
     commands:
